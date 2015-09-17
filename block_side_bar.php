@@ -18,14 +18,15 @@ class block_side_bar extends block_list {
         $this->title = get_string('sidebar', 'block_side_bar');
         $this->version = 2008050200;
 
-    /// Make sure the global section start value is set.
+        /// Make sure the global section start value is set.
         if (!isset($CFG->block_side_bar_section_start)) {
             set_config('block_side_bar_section_start', 1000);
         }
     }
 
     function get_content() {
-        global $USER, $CFG;
+        global $USER, $CFG, $DB;
+
         if ($this->content !== NULL) {
             return $this->content;
         }
@@ -43,21 +44,21 @@ class block_side_bar extends block_list {
             $this->config->title = '';
         }
 
-        $course = get_record('course', 'id', $this->instance->pageid);
-        
+        $course = $DB->get_record('course', 'id', $this->instance->pageid);
+
         $isteacher = isteacher($this->instance->pageid);
         $isediting = isediting($this->instance->pageid);
         $ismoving  = ismoving($this->instance->pageid);
-        
+
         $section_start = $CFG->block_side_bar_section_start;
 
-    /// Create a new section for this block (if necessary).
+        /// Create a new section for this block (if necessary).
         if (empty($this->config->section)) {
             $sql = "SELECT MAX(section) as sectionid
                     FROM {$CFG->prefix}course_sections
                     WHERE course='{$this->instance->pageid}'";
-            $rec = get_record_sql($sql);
-            
+            $rec = $DB->get_record_sql($sql);
+
             $sectionnum = $rec->sectionid;
 
             if ($sectionnum < $section_start) {
@@ -65,43 +66,41 @@ class block_side_bar extends block_list {
             } else {
                 $sectionnum++;
             }
-            
+
             $section = new stdClass;
             $section->course   = $this->instance->pageid;
             $section->section  = $sectionnum;
             $section->summary  = '';
             $section->sequence = '';
             $section->visible  = 1;
-            $section->id = insert_record('course_sections', $section);
-            
+            $section->id = $DB->insert_record('course_sections', $section);
+
             if (empty($section->id)) {
                 error('Could not add new section to course.');
             }
-            
-            
-            
-        /// Store the section number and ID of the DB record for that section.
+
+            /// Store the section number and ID of the DB record for that section.
             $this->config->section    = $section->section;
             $this->config->section_id = $section->id;
             parent::instance_config_commit();
         } else {
 
             if (empty($this->config->section_id)) {
-                $section = get_record('course_sections', 'course', $this->instance->pageid,
+                $section = $DB->get_record('course_sections', 'course', $this->instance->pageid,
                                       'section', $this->config->section);
 
                 $this->config->section_id = $section->id;
                 parent::instance_config_commit();
             } else {
-                $section = get_record('course_sections', 'id', $this->config->section_id);
+                $section = $DB->get_record('course_sections', 'id', $this->config->section_id);
             }
-            
-        /// Double check that the section number hasn't been modified by something else.
-        /// Fixes problem found by Charlotte Owen when moving 'center column' course sections.
+
+            /// Double check that the section number hasn't been modified by something else.
+            /// Fixes problem found by Charlotte Owen when moving 'center column' course sections.
             if ($section->section != $this->config->section) {
                 $section->section = $this->config->section;
-                
-                update_record('course_sections', $section);
+
+                $DB->update_record('course_sections', $section);
             }
         }
 
@@ -198,7 +197,7 @@ class block_side_bar extends block_list {
     }
 
     function instance_delete() {
-        global $CFG;
+        global $CFG, $DB;
 
         if (empty($this->instance)) {
             return true;
@@ -206,11 +205,11 @@ class block_side_bar extends block_list {
         
         // Cleanup the section created by this block and any course modules.
         if (isset($this->config->section)) {
-            $section = get_record('course_sections', 'section', $this->config->section,
+            $section = $DB->get_record('course_sections', 'section', $this->config->section,
                                   'course', $this->instance->pageid);
 
             if (!empty($section)) {
-                if ($modules = get_records('course_modules', 'section', $section->id)) {
+                if ($modules = $DB->get_records('course_modules', 'section', $section->id)) {
                     $mods = array();
                     foreach ($modules as $module) {
                         if (!isset($mods[$module->module])) {
@@ -232,8 +231,8 @@ class block_side_bar extends block_list {
                 }
                 
             }
-            
-            delete_records('course_sections', 'id', $section->id);
+
+            $DB->delete_records('course_sections', 'id', $section->id);
         }
         
         return true;
@@ -274,7 +273,7 @@ class block_side_bar extends block_list {
         $sql = "select id from {$CFG->prefix}course_sections ".
             "where course={$this->instance->pageid} ".
             "and section={$this->config->section} ";
-        $rec = get_record_sql( $sql );
+        $rec = $DB->get_record_sql( $sql );
         $this->config->section_id = $rec->id;
         parent::instance_config_commit();
         return true;
