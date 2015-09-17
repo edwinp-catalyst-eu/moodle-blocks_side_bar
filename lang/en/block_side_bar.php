@@ -10,4 +10,7 @@ $string['sectionnumberwarning'] = 'WARNING: This value should be high enough tha
                                   'number.';
 $string['sidebar'] = 'Side Bar';
 
+// Additional
+$string['pluginname'] = 'Side Bar';
+
 ?>
