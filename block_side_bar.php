@@ -46,9 +46,19 @@ class block_side_bar extends block_list {
 
         $course = $DB->get_record('course', array('id' => $this->instance->pageid));
 
+        /* Commented out as generating fatal errors
+         *
         $isteacher = isteacher($this->instance->pageid);
         $isediting = isediting($this->instance->pageid);
         $ismoving  = ismoving($this->instance->pageid);
+         *
+         * Replaced with boolean vars below
+         *
+        */
+
+        $isteacher = false;
+        $isediting = false;
+        $ismoving = false;
 
         $section_start = $CFG->block_side_bar_section_start;
 
@@ -67,16 +77,19 @@ class block_side_bar extends block_list {
                 $sectionnum++;
             }
 
-            $section = new stdClass;
-            $section->course   = $this->instance->pageid;
-            $section->section  = $sectionnum;
-            $section->summary  = '';
-            $section->sequence = '';
-            $section->visible  = 1;
-            $section->id = $DB->insert_record('course_sections', $section);
+            // Added the below conditional as the code within basically just doesnt work
+            if (isset($this->instance->pageid) && $this->instance->pageid) {
+                $section = new stdClass;
+                $section->course   = $this->instance->pageid;
+                $section->section  = $sectionnum;
+                $section->summary  = '';
+                $section->sequence = '';
+                $section->visible  = 1;
+                $section->id = $DB->insert_record('course_sections', $section);
 
-            if (empty($section->id)) {
-                error('Could not add new section to course.');
+                if (empty($section->id)) {
+                    error('Could not add new section to course.');
+                }
             }
 
             /// Store the section number and ID of the DB record for that section.
