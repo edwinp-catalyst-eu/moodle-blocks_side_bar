@@ -44,7 +44,7 @@ class block_side_bar extends block_list {
             $this->config->title = '';
         }
 
-        $course = $DB->get_record('course', 'id', $this->instance->pageid);
+        $course = $DB->get_record('course', array('id' => $this->instance->pageid));
 
         $isteacher = isteacher($this->instance->pageid);
         $isediting = isediting($this->instance->pageid);
